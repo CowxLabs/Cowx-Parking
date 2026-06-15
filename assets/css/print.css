@@ -1,0 +1,57 @@
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+  }
+
+  .nav,
+  .theme-toggle,
+  .btn,
+  .footer,
+  .no-print {
+    display: none !important;
+  }
+
+  .pass-card {
+    border: 2px solid #000 !important;
+    box-shadow: none !important;
+    padding: 0.5in;
+    max-width: 100%;
+    page-break-inside: avoid;
+    background: white !important;
+  }
+
+  .pass-card h2,
+  .pass-card dd,
+  .pass-card dt {
+    color: black !important;
+  }
+
+  .qr-container img,
+  .qr-container canvas {
+    width: 2in !important;
+    height: 2in !important;
+  }
+
+  .badge-active {
+    border: 1px solid #000 !important;
+    color: #000 !important;
+    background: transparent !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .countdown {
+    color: #000 !important;
+  }
+
+  .pass-details dt {
+    color: #555 !important;
+  }
+
+  @page {
+    margin: 0.25in;
+    size: letter portrait;
+  }
+}

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scan Pass — ParkPass</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<script src="../assets/js/theme.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/store.js"></script>
+</head>
+<body>
+
+<button id="theme-toggle" class="theme-toggle" onclick="__toggleTheme()" aria-label="Toggle theme"></button>
+<script>__setTheme(window.__theme);</script>
+
+<nav class="nav no-print">
+  <a href="../index.html" class="nav-brand">&#x1F6A6; ParkPass</a>
+  <div class="nav-links">
+    <a href="scan.html">Scan</a>
+    <a href="#" onclick="logout()" style="color:var(--danger);">Logout</a>
+  </div>
+</nav>
+
+<div class="container" style="max-width:32rem;">
+  <div class="card">
+    <div class="card-header">
+      <h1 style="font-size:1.25rem;font-weight:700;">Verify Parking Pass</h1>
+    </div>
+    <div class="card-body">
+      <p class="text-muted" style="margin-bottom:1.5rem;">Enter the pass ID shown on the visitor's pass.</p>
+
+      <div class="form-group">
+        <label class="form-label">Pass ID</label>
+        <input type="text" class="form-input" id="pass-id-input" placeholder="e.g. P-7F3A" style="font-family:monospace;font-size:1.125rem;text-transform:uppercase;" autofocus>
+      </div>
+
+      <button id="verify-btn" class="btn btn-primary" style="width:100%;">Verify</button>
+    </div>
+  </div>
+
+  <div id="result-container" style="margin-top:1rem;"></div>
+</div>
+
+<script>
+(function () {
+  var user = getLoggedUser();
+  if (!user || user.role !== 'staff') { window.location.href = '../index.html'; return; }
+
+  var input = qs('#pass-id-input');
+
+  function verify() {
+    var id = input.value.trim().toUpperCase();
+    if (!id) {
+      showResult('Please enter a pass ID.', 'danger');
+      return;
+    }
+
+    var pass = getPass(id);
+    if (!pass) {
+      showResult('Pass <code>' + id + '</code> not found in the system.', 'danger');
+      return;
+    }
+
+    var status = getStatus(pass);
+    if (status === 'active') {
+      showResult(
+        '<div style="text-align:center;">' +
+          '<p style="font-size:1.5rem;font-weight:700;color:var(--success);margin-bottom:0.5rem;">&#10003; Valid Pass</p>' +
+          '<dl class="pass-details">' +
+            '<dt>Visitor</dt><dd>' + pass.visitorName + '</dd>' +
+            '<dt>Vehicle Plate</dt><dd>' + pass.vehiclePlate + '</dd>' +
+            '<dt>Parking Spot</dt><dd>' + pass.spot + '</dd>' +
+            '<dt>Host</dt><dd>' + pass.tenantName + ' (Unit ' + pass.unit + ')</dd>' +
+            '<dt>Expires</dt><dd>' + formatDate(pass.expiresAt) + '</dd>' +
+          '</dl>' +
+        '</div>',
+        'success'
+      );
+    } else if (status === 'expired') {
+      showResult(
+        '<div style="text-align:center;">' +
+          '<p style="font-size:1.5rem;font-weight:700;color:var(--danger);margin-bottom:0.5rem;">&#10007; Expired</p>' +
+          '<p class="text-muted">This pass expired on ' + formatDate(pass.expiresAt) + '.</p>' +
+        '</div>',
+        'danger'
+      );
+    } else {
+      showResult(
+        '<div style="text-align:center;">' +
+          '<p style="font-size:1.5rem;font-weight:700;color:var(--warning);margin-bottom:0.5rem;">&#10007; Revoked</p>' +
+          '<p class="text-muted">This pass has been revoked by the tenant.</p>' +
+        '</div>',
+        'danger'
+      );
+    }
+  }
+
+  function showResult(html, type) {
+    qs('#result-container').innerHTML =
+      '<div class="card"><div class="card-body">' + html + '</div></div>' +
+      '<div style="text-align:center;margin-top:0.75rem;">' +
+        '<button class="btn btn-outline" onclick="qs(\'#result-container\').innerHTML=\'\';qs(\'#pass-id-input\').value=\'\';qs(\'#pass-id-input\').focus();">Scan Another</button>' +
+      '</div>';
+  }
+
+  qs('#verify-btn').addEventListener('click', verify);
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') verify();
+  });
+})();
+</script>
+
+</body>
+</html>

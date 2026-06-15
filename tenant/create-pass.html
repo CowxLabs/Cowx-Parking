@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Pass — ParkPass</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<script src="../assets/js/theme.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/store.js"></script>
+</head>
+<body>
+
+<button id="theme-toggle" class="theme-toggle" onclick="__toggleTheme()" aria-label="Toggle theme"></button>
+<script>__setTheme(window.__theme);</script>
+
+<nav class="nav no-print">
+  <a href="../index.html" class="nav-brand">&#x1F6A6; ParkPass</a>
+  <div class="nav-links">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="create-pass.html">New Pass</a>
+    <a href="history.html">History</a>
+    <a href="#" onclick="logout()" style="color:var(--danger);">Logout</a>
+  </div>
+</nav>
+
+<div class="container" style="max-width:32rem;">
+  <div class="card">
+    <div class="card-header">
+      <h1 style="font-size:1.25rem;font-weight:700;">Create Visitor Pass</h1>
+    </div>
+    <div class="card-body">
+      <form id="pass-form" onsubmit="return false;">
+        <div class="form-group">
+          <label class="form-label">Visitor Name</label>
+          <input type="text" class="form-input" id="visitor-name" placeholder="e.g. John Smith" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Vehicle Plate</label>
+          <input type="text" class="form-input" id="vehicle-plate" placeholder="e.g. ABC-1234" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Parking Spot</label>
+          <select class="form-select" id="parking-spot">
+            <option value="Guest-01">Guest-01</option>
+            <option value="Guest-02">Guest-02</option>
+            <option value="Guest-03">Guest-03</option>
+            <option value="Guest-04">Guest-04</option>
+            <option value="Guest-05">Guest-05</option>
+            <option value="Guest-06">Guest-06</option>
+            <option value="Guest-07">Guest-07</option>
+            <option value="Guest-08">Guest-08</option>
+            <option value="Guest-09">Guest-09</option>
+            <option value="Guest-10">Guest-10</option>
+            <option value="Guest-11">Guest-11</option>
+            <option value="Guest-12">Guest-12</option>
+            <option value="Guest-13">Guest-13</option>
+            <option value="Guest-14">Guest-14</option>
+            <option value="Guest-15">Guest-15</option>
+            <option value="Guest-16">Guest-16</option>
+            <option value="Guest-17">Guest-17</option>
+            <option value="Guest-18">Guest-18</option>
+            <option value="Guest-19">Guest-19</option>
+            <option value="Guest-20">Guest-20</option>
+            <option value="Guest-21">Guest-21</option>
+            <option value="Guest-22">Guest-22</option>
+            <option value="Guest-23">Guest-23</option>
+            <option value="Guest-24">Guest-24</option>
+            <option value="Guest-25">Guest-25</option>
+            <option value="Guest-26">Guest-26</option>
+            <option value="Guest-27">Guest-27</option>
+            <option value="Guest-28">Guest-28</option>
+            <option value="Guest-29">Guest-29</option>
+            <option value="Guest-30">Guest-30</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Duration</label>
+          <select class="form-select" id="duration">
+            <option value="2">2 hours</option>
+            <option value="4" selected>4 hours</option>
+            <option value="8">8 hours</option>
+            <option value="12">12 hours</option>
+            <option value="24">24 hours</option>
+            <option value="48">2 days</option>
+          </select>
+        </div>
+
+        <div id="form-alert"></div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;" id="submit-btn">
+          Generate Pass
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var user = getLoggedUser();
+  if (!user || user.role !== 'tenant') { window.location.href = '../index.html'; return; }
+
+  qs('#pass-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    var name = qs('#visitor-name').value.trim();
+    var plate = qs('#vehicle-plate').value.trim().toUpperCase();
+    var spot = qs('#parking-spot').value;
+    var durationHours = parseInt(qs('#duration').value, 10);
+
+    if (!name) { showAlert('Please enter a visitor name.', 'danger'); return; }
+    if (!plate) { showAlert('Please enter a vehicle plate.', 'danger'); return; }
+
+    var now = new Date();
+    var expires = new Date(now.getTime() + durationHours * 60 * 60 * 1000);
+
+    var pass = {
+      id: generateId(),
+      tenantName: user.name,
+      unit: user.unit || '',
+      visitorName: name,
+      vehiclePlate: plate,
+      spot: spot,
+      createdAt: now.toISOString(),
+      expiresAt: expires.toISOString(),
+      status: 'active'
+    };
+
+    addPass(pass);
+    window.location.href = '../visitor/pass.html?pid=' + pass.id;
+  });
+
+  function showAlert(msg, type) {
+    qs('#form-alert').innerHTML = '<div class="alert alert-' + type + '">' + msg + '</div>';
+  }
+})();
+</script>
+
+</body>
+</html>

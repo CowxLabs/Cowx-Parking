@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manager Dashboard — ParkPass</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<script src="../assets/js/theme.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/store.js"></script>
+</head>
+<body>
+
+<button id="theme-toggle" class="theme-toggle" onclick="__toggleTheme()" aria-label="Toggle theme"></button>
+<script>__setTheme(window.__theme);</script>
+
+<nav class="nav no-print">
+  <a href="../index.html" class="nav-brand">&#x1F6A6; ParkPass</a>
+  <div class="nav-links">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="analytics.html">Analytics</a>
+    <a href="#" onclick="logout()" style="color:var(--danger);">Logout</a>
+  </div>
+</nav>
+
+<div class="container container-wide">
+  <div class="page-header">
+    <h1>Property Dashboard</h1>
+    <div class="btn-group">
+      <button class="btn btn-sm btn-outline" onclick="exportPassesCSV('all')">Export All</button>
+      <button class="btn btn-sm btn-outline" onclick="exportPassesCSV('active')">Export Active</button>
+      <button class="btn btn-sm btn-outline" onclick="exportPassesCSV('expired')">Export Expired</button>
+    </div>
+  </div>
+
+  <div class="stats-grid" id="stats-row">
+    <div class="stat-card"><div class="stat-value" id="stat-total">0</div><div class="stat-label">Total Passes</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-active">0</div><div class="stat-label">Active</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-expired">0</div><div class="stat-label">Expired</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-revoked">0</div><div class="stat-label">Revoked</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-units">0</div><div class="stat-label">Units Using Passes</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2 style="font-size:1rem;font-weight:600;">All Passes</h2>
+    </div>
+    <div class="card-body">
+      <div class="filter-bar">
+        <input type="text" class="form-input" id="search-input" placeholder="Search by name, plate, unit, or pass ID...">
+        <div class="filter-tabs" id="filter-tabs">
+          <button class="filter-tab active" data-filter="all">All</button>
+          <button class="filter-tab" data-filter="active">Active</button>
+          <button class="filter-tab" data-filter="expired">Expired</button>
+          <button class="filter-tab" data-filter="revoked">Revoked</button>
+        </div>
+      </div>
+
+      <div class="table-container table-mobile-cards" id="passes-table">
+        <div class="text-center text-muted" style="padding:2rem 0;">Loading...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var user = getLoggedUser();
+  if (!user || user.role !== 'manager') { window.location.href = '../index.html'; return; }
+
+  var currentFilter = 'all';
+  var currentSearch = '';
+
+  function updateStats(passes) {
+    var total = passes.length;
+    var active = passes.filter(function (p) { return getStatus(p) === 'active'; }).length;
+    var expired = passes.filter(function (p) { return getStatus(p) === 'expired'; }).length;
+    var revoked = passes.filter(function (p) { return getStatus(p) === 'revoked'; }).length;
+    var units = new Set(passes.map(function (p) { return p.unit; })).size;
+
+    qs('#stat-total').textContent = total;
+    qs('#stat-active').textContent = active;
+    qs('#stat-expired').textContent = expired;
+    qs('#stat-revoked').textContent = revoked;
+    qs('#stat-units').textContent = units;
+  }
+
+  function renderTable(passes) {
+    var el = qs('#passes-table');
+
+    if (passes.length === 0) {
+      el.innerHTML = '<div class="empty-state"><p>No passes match your criteria.</p></div>';
+      return;
+    }
+
+    el.innerHTML =
+      '<table>' +
+        '<thead><tr>' +
+          '<th>Pass ID</th><th>Tenant</th><th>Unit</th><th>Visitor</th><th>Plate</th><th>Spot</th><th>Created</th><th>Expires</th><th>Status</th><th></th>' +
+        '</tr></thead><tbody>' +
+        passes.map(function (p) {
+          var status = getStatus(p);
+          var badgeClass = status === 'active' ? 'badge-active' : status === 'expired' ? 'badge-expired' : 'badge-revoked';
+          return '<tr>' +
+            '<td data-label="Pass ID"><code>' + p.id + '</code></td>' +
+            '<td data-label="Tenant">' + p.tenantName + '</td>' +
+            '<td data-label="Unit">' + p.unit + '</td>' +
+            '<td data-label="Visitor">' + p.visitorName + '</td>' +
+            '<td data-label="Plate">' + p.vehiclePlate + '</td>' +
+            '<td data-label="Spot">' + p.spot + '</td>' +
+            '<td data-label="Created">' + formatDateShort(p.createdAt) + '</td>' +
+            '<td data-label="Expires">' + formatDateShort(p.expiresAt) + '</td>' +
+            '<td data-label="Status"><span class="badge ' + badgeClass + '">' + status + '</span></td>' +
+            '<td><a href="../visitor/pass.html?pid=' + p.id + '" class="btn btn-sm btn-outline">View</a></td>' +
+          '</tr>';
+        }).join('') +
+        '</tbody></table>';
+  }
+
+  function filterAndRender() {
+    var passes = getPasses();
+
+    if (currentFilter !== 'all') {
+      passes = passes.filter(function (p) { return getStatus(p) === currentFilter; });
+    }
+
+    if (currentSearch) {
+      var s = currentSearch.toLowerCase();
+      passes = passes.filter(function (p) {
+        return p.visitorName.toLowerCase().indexOf(s) !== -1 ||
+               p.tenantName.toLowerCase().indexOf(s) !== -1 ||
+               p.vehiclePlate.toLowerCase().indexOf(s) !== -1 ||
+               p.unit.toLowerCase().indexOf(s) !== -1 ||
+               p.id.toLowerCase().indexOf(s) !== -1 ||
+               p.spot.toLowerCase().indexOf(s) !== -1;
+      });
+    }
+
+    updateStats(getPasses());
+    renderTable(passes);
+  }
+
+  qs('#search-input').addEventListener('input', function () {
+    currentSearch = this.value;
+    filterAndRender();
+  });
+
+  qsa('.filter-tab').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      qsa('.filter-tab').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      currentFilter = btn.dataset.filter;
+      filterAndRender();
+    });
+  });
+
+  filterAndRender();
+})();
+</script>
+
+</body>
+</html>

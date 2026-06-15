@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pass History — ParkPass</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<script src="../assets/js/theme.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/store.js"></script>
+</head>
+<body>
+
+<button id="theme-toggle" class="theme-toggle" onclick="__toggleTheme()" aria-label="Toggle theme"></button>
+<script>__setTheme(window.__theme);</script>
+
+<nav class="nav no-print">
+  <a href="../index.html" class="nav-brand">&#x1F6A6; ParkPass</a>
+  <div class="nav-links">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="create-pass.html">New Pass</a>
+    <a href="history.html">History</a>
+    <a href="#" onclick="logout()" style="color:var(--danger);">Logout</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Pass History</h1>
+    <a href="create-pass.html" class="btn btn-primary">+ New Pass</a>
+  </div>
+
+  <div class="filter-tabs" id="filter-tabs">
+    <button class="filter-tab active" data-filter="all">All</button>
+    <button class="filter-tab" data-filter="active">Active</button>
+    <button class="filter-tab" data-filter="expired">Expired</button>
+    <button class="filter-tab" data-filter="revoked">Revoked</button>
+  </div>
+
+  <div class="card">
+    <div class="card-body" id="history-list">
+      <div class="text-center text-muted" style="padding:2rem 0;">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var user = getLoggedUser();
+  if (!user || user.role !== 'tenant') { window.location.href = '../index.html'; return; }
+
+  var currentFilter = 'all';
+
+  function render(filter) {
+    var passes = getTenantPasses(user.name);
+    if (filter && filter !== 'all') {
+      passes = passes.filter(function (p) { return getStatus(p) === filter; });
+    }
+
+    var list = qs('#history-list');
+
+    if (passes.length === 0) {
+      list.innerHTML = '<div class="empty-state"><p>No passes found.</p></div>';
+      return;
+    }
+
+    list.innerHTML =
+      '<div class="table-container"><table>' +
+        '<thead><tr>' +
+          '<th>Visitor</th><th>Plate</th><th>Spot</th><th>Created</th><th>Expires</th><th>Status</th><th></th>' +
+        '</tr></thead><tbody>' +
+        passes.map(function (p) {
+          var status = getStatus(p);
+          var badgeClass = status === 'active' ? 'badge-active' : status === 'expired' ? 'badge-expired' : 'badge-revoked';
+          return '<tr>' +
+            '<td>' + p.visitorName + '</td>' +
+            '<td>' + p.vehiclePlate + '</td>' +
+            '<td>' + p.spot + '</td>' +
+            '<td>' + formatDateShort(p.createdAt) + '</td>' +
+            '<td>' + formatDateShort(p.expiresAt) + '</td>' +
+            '<td><span class="badge ' + badgeClass + '">' + status + '</span></td>' +
+            '<td><a href="../visitor/pass.html?pid=' + p.id + '" class="btn btn-sm btn-outline">View</a></td>' +
+          '</tr>';
+        }).join('') +
+        '</tbody></table></div>';
+  }
+
+  render('all');
+
+  qsa('.filter-tab').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      qsa('.filter-tab').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      currentFilter = btn.dataset.filter;
+      render(currentFilter);
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

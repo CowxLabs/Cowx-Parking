@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ParkPass — Visitor Parking for Apartments</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="assets/js/theme.js"></script>
+</head>
+<body>
+
+<button id="theme-toggle" class="theme-toggle" onclick="__toggleTheme()" aria-label="Toggle theme"></button>
+<script>__setTheme(window.__theme);</script>
+
+<main>
+  <section class="hero">
+    <h1>ParkPass</h1>
+    <p>Issue and monitor visitor parking passes for your apartment community. Simple, digital, free.</p>
+    <div style="margin-bottom:2rem;display:flex;justify-content:center;gap:0.5rem;flex-wrap:wrap;">
+      <span class="badge badge-active">&#10003; Digital Passes</span>
+      <span class="badge badge-active">&#10003; QR Verification</span>
+      <span class="badge badge-active">&#10003; Real-time Dashboard</span>
+    </div>
+  </section>
+
+  <div class="role-grid">
+    <a href="login.html?role=tenant" class="role-card">
+      <span class="role-icon">&#x1F3E0;</span>
+      <h3>Tenant</h3>
+      <p>Create and manage visitor parking passes for your guests.</p>
+    </a>
+
+    <a href="login.html?role=staff" class="role-card">
+      <span class="role-icon">&#x1F6A8;</span>
+      <h3>Staff</h3>
+      <p>Scan and verify visitor parking passes at entry.</p>
+    </a>
+
+    <a href="login.html?role=manager" class="role-card">
+      <span class="role-icon">&#x1F4CA;</span>
+      <h3>Manager</h3>
+      <p>Monitor all passes, view analytics, and export reports.</p>
+    </a>
+  </div>
+
+  <div style="text-align:center;margin-top:3rem;padding-bottom:2rem;">
+    <p class="text-muted" style="font-size:0.875rem;">Demo app &mdash; all data is stored locally in your browser.</p>
+  </div>
+</main>
+
+</body>
+</html>

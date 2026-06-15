@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login — ParkPass</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="assets/js/theme.js"></script>
+<script src="assets/js/utils.js"></script>
+<script src="assets/js/store.js"></script>
+</head>
+<body>
+
+<button id="theme-toggle" class="theme-toggle" onclick="__toggleTheme()" aria-label="Toggle theme"></button>
+<script>__setTheme(window.__theme);</script>
+
+<nav class="nav no-print">
+  <a href="index.html" class="nav-brand">&#x1F6A6; ParkPass</a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+  </div>
+</nav>
+
+<div class="container" style="max-width:28rem;">
+  <div class="card">
+    <div class="card-header">
+      <h1 style="font-size:1.25rem;font-weight:700;" id="login-title">Login</h1>
+    </div>
+    <div class="card-body" id="login-form-container">
+      <div class="text-center text-muted" style="padding:2rem 0;">
+        <p id="login-loading">Loading...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var role = params.get('role') || 'tenant';
+
+  var title = qs('#login-title');
+  var container = qs('#login-form-container');
+
+  function renderTenantLogin() {
+    title.textContent = 'Tenant Login';
+    var tenants = getTenants();
+    container.innerHTML =
+      '<p class="text-muted" style="margin-bottom:1.5rem;">Select your name to continue.</p>' +
+      '<div class="form-group">' +
+        '<label class="form-label">Select Tenant</label>' +
+        '<select id="tenant-select" class="form-select">' +
+          tenants.map(function (t) {
+            return '<option value="' + t.name + '">' + t.name + ' — Unit ' + t.unit + '</option>';
+          }).join('') +
+        '</select>' +
+      '</div>' +
+      '<button id="login-btn" class="btn btn-primary" style="width:100%;">Continue as Tenant</button>';
+    qs('#login-btn').addEventListener('click', function () {
+      var name = qs('#tenant-select').value;
+      var tenant = tenants.find(function (t) { return t.name === name; });
+      setLoggedUser({ role: 'tenant', name: name, unit: tenant ? tenant.unit : '' });
+      window.location.href = 'tenant/dashboard.html';
+    });
+  }
+
+  function renderStaffLogin() {
+    title.textContent = 'Staff Login';
+    container.innerHTML =
+      '<p class="text-muted" style="margin-bottom:1.5rem;">Staff verification portal.</p>' +
+      '<div class="form-group">' +
+        '<label class="form-label">Staff ID</label>' +
+        '<input type="text" class="form-input" id="staff-id" placeholder="e.g. STAFF-001" value="STAFF-001">' +
+      '</div>' +
+      '<button id="login-btn" class="btn btn-primary" style="width:100%;">Login as Staff</button>';
+    qs('#login-btn').addEventListener('click', function () {
+      setLoggedUser({ role: 'staff', name: qs('#staff-id').value || 'STAFF-001' });
+      window.location.href = 'staff/scan.html';
+    });
+  }
+
+  function renderManagerLogin() {
+    title.textContent = 'Manager Login';
+    container.innerHTML =
+      '<p class="text-muted" style="margin-bottom:1.5rem;">Property management dashboard.</p>' +
+      '<div class="form-group">' +
+        '<label class="form-label">Email</label>' +
+        '<input type="email" class="form-input" id="manager-email" placeholder="manager@example.com" value="admin@parkpass.demo">' +
+      '</div>' +
+      '<div class="form-group">' +
+        '<label class="form-label">Password</label>' +
+        '<input type="password" class="form-input" id="manager-pass" placeholder="Enter password" value="••••••••">' +
+      '</div>' +
+      '<button id="login-btn" class="btn btn-primary" style="width:100%;">Login as Manager</button>';
+    qs('#login-btn').addEventListener('click', function () {
+      setLoggedUser({ role: 'manager', name: 'Admin' });
+      window.location.href = 'manager/dashboard.html';
+    });
+  }
+
+  if (role === 'tenant') renderTenantLogin();
+  else if (role === 'staff') renderStaffLogin();
+  else if (role === 'manager') renderManagerLogin();
+  else {
+    container.innerHTML = '<p class="text-muted">Invalid role. <a href="index.html">Go back</a>.</p>';
+  }
+})();
+</script>
+
+</body>
+</html>

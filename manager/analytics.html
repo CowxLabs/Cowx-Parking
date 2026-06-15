@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analytics — ParkPass</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<script src="../assets/js/theme.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/store.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<button id="theme-toggle" class="theme-toggle" onclick="__toggleTheme()" aria-label="Toggle theme"></button>
+<script>__setTheme(window.__theme);</script>
+
+<nav class="nav no-print">
+  <a href="../index.html" class="nav-brand">&#x1F6A6; ParkPass</a>
+  <div class="nav-links">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="analytics.html">Analytics</a>
+    <a href="#" onclick="logout()" style="color:var(--danger);">Logout</a>
+  </div>
+</nav>
+
+<div class="container container-wide">
+  <div class="page-header">
+    <h1>Analytics</h1>
+  </div>
+
+  <div class="chart-grid">
+    <div class="card">
+      <div class="card-header"><h2 style="font-size:1rem;font-weight:600;">Passes per Day</h2></div>
+      <div class="card-body">
+        <div class="chart-container"><canvas id="chart-daily"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2 style="font-size:1rem;font-weight:600;">Pass Status Breakdown</h2></div>
+      <div class="card-body">
+        <div class="chart-container"><canvas id="chart-status"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2 style="font-size:1rem;font-weight:600;">Top Units by Pass Usage</h2></div>
+      <div class="card-body">
+        <div class="chart-container"><canvas id="chart-units"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2 style="font-size:1rem;font-weight:600;">Pass Duration Distribution</h2></div>
+      <div class="card-body">
+        <div class="chart-container"><canvas id="chart-duration"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var user = getLoggedUser();
+  if (!user || user.role !== 'manager') { window.location.href = '../index.html'; return; }
+
+  var passes = getPasses();
+  if (passes.length === 0) return;
+
+  var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+  function getCSS(varName) {
+    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  }
+
+  var textColor = getCSS('--text-muted');
+  var gridColor = getCSS('--chart-grid');
+  var primaryColor = getCSS('--primary');
+  var successColor = getCSS('--success');
+  var dangerColor = getCSS('--danger');
+  var warningColor = getCSS('--warning');
+
+  // Chart 1: Passes per day (last 7 days)
+  (function () {
+    var days = [];
+    var counts = [];
+    for (var i = 6; i >= 0; i--) {
+      var d = new Date();
+      d.setDate(d.getDate() - i);
+      var key = d.toDateString();
+      days.push(d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }));
+      counts.push(passes.filter(function (p) {
+        return new Date(p.createdAt).toDateString() === key;
+      }).length);
+    }
+
+    new Chart(qs('#chart-daily'), {
+      type: 'bar',
+      data: {
+        labels: days,
+        datasets: [{
+          label: 'Passes',
+          data: counts,
+          backgroundColor: primaryColor + '33',
+          borderColor: primaryColor,
+          borderWidth: 2,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: textColor }, grid: { color: gridColor } },
+          y: { ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor }, beginAtZero: true }
+        }
+      }
+    });
+  })();
+
+  // Chart 2: Status breakdown (pie)
+  (function () {
+    var active = passes.filter(function (p) { return getStatus(p) === 'active'; }).length;
+    var expired = passes.filter(function (p) { return getStatus(p) === 'expired'; }).length;
+    var revoked = passes.filter(function (p) { return getStatus(p) === 'revoked'; }).length;
+
+    new Chart(qs('#chart-status'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Active', 'Expired', 'Revoked'],
+        datasets: [{
+          data: [active, expired, revoked],
+          backgroundColor: [successColor, dangerColor, warningColor],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: textColor, padding: 16 }
+          }
+        }
+      }
+    });
+  })();
+
+  // Chart 3: Top units
+  (function () {
+    var unitCounts = {};
+    passes.forEach(function (p) {
+      unitCounts[p.unit] = (unitCounts[p.unit] || 0) + 1;
+    });
+    var sorted = Object.entries(unitCounts).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 10);
+    var labels = sorted.map(function (e) { return e[0]; });
+    var data = sorted.map(function (e) { return e[1]; });
+
+    new Chart(qs('#chart-units'), {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Passes',
+          data: data,
+          backgroundColor: primaryColor + '33',
+          borderColor: primaryColor,
+          borderWidth: 2,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor }, beginAtZero: true },
+          y: { ticks: { color: textColor }, grid: { display: false } }
+        }
+      }
+    });
+  })();
+
+  // Chart 4: Duration distribution
+  (function () {
+    var durations = { '2h': 0, '4h': 0, '8h': 0, '12h': 0, '24h': 0, '48h+': 0 };
+    passes.forEach(function (p) {
+      var diff = new Date(p.expiresAt) - new Date(p.createdAt);
+      var hours = diff / (1000 * 60 * 60);
+      if (hours <= 2) durations['2h']++;
+      else if (hours <= 4) durations['4h']++;
+      else if (hours <= 8) durations['8h']++;
+      else if (hours <= 12) durations['12h']++;
+      else if (hours <= 24) durations['24h']++;
+      else durations['48h+']++;
+    });
+
+    var colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444'];
+
+    new Chart(qs('#chart-duration'), {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(durations),
+        datasets: [{
+          data: Object.values(durations),
+          backgroundColor: colors.map(function (c) { return isDark ? c + 'cc' : c + '88'; }),
+          borderColor: colors,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: textColor, padding: 16 }
+          }
+        }
+      }
+    });
+  })();
+})();
+</script>
+
+</body>
+</html>
