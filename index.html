@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ParkPass — Visitor Parking for Apartments</title>
+<title>ParkPass — Visitor Parking System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cascadia+Code:wght@400;500;600;700&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
 <script src="assets/js/theme.js"></script>
 </head>
@@ -12,14 +15,21 @@
 <button id="theme-toggle" class="theme-toggle" onclick="__toggleTheme()" aria-label="Toggle theme"></button>
 <script>__setTheme(window.__theme);</script>
 
+<nav class="nav">
+  <a href="index.html" class="nav-brand">&#x1F6A6; ParkPass</a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+  </div>
+</nav>
+
 <main>
   <section class="hero">
     <h1>ParkPass</h1>
     <p>Issue and monitor visitor parking passes for your apartment community. Simple, digital, free.</p>
     <div style="margin-bottom:2rem;display:flex;justify-content:center;gap:0.5rem;flex-wrap:wrap;">
-      <span class="badge badge-active">&#10003; Digital Passes</span>
-      <span class="badge badge-active">&#10003; QR Verification</span>
-      <span class="badge badge-active">&#10003; Real-time Dashboard</span>
+      <span class="badge badge-active">&gt; Digital Passes</span>
+      <span class="badge badge-active">&gt; QR Verification</span>
+      <span class="badge badge-active">&gt; Real-time Dashboard</span>
     </div>
   </section>
 
@@ -44,7 +54,7 @@
   </div>
 
   <div style="text-align:center;margin-top:3rem;padding-bottom:2rem;">
-    <p class="text-muted" style="font-size:0.875rem;">Demo app &mdash; all data is stored locally in your browser.</p>
+    <p class="text-muted" style="font-size:0.75rem;">// Demo app &mdash; all data is stored locally in your browser.</p>
   </div>
 </main>
 
